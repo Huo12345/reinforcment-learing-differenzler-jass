@@ -48,7 +48,7 @@ class DiffJudger:
         only_trump_is_jack = [c.rank for c in hand if c.suit == trump] == ['J']
         allowed_trumps = [c.suit == trump and self.beats(highest_trump_played, c, trump) for c in hand]
 
-        if is_trump_drawn:
+        if is_trump_drawn and can_follow_suit:
             return [True for _ in hand] if only_trump_is_jack else [c.suit == trump for c in hand]
 
         if can_follow_suit:
@@ -56,7 +56,8 @@ class DiffJudger:
             return list(map(lambda t: t[0] and t[1], zip(same_suit, allowed_trumps)))
 
         non_trump = [c.suit != trump for c in hand]
-        return list(map(lambda t: t[0] and t[1], zip(non_trump, allowed_trumps)))
+        legal_moves = list(map(lambda t: t[0] and t[1], zip(non_trump, allowed_trumps)))
+        return legal_moves if any(legal_moves) else [True for _ in hand]
 
     def highest_played_trump(self, played: list[Card], trump: str) -> Card | None:
         trump_cards_played = [c for c in played if c.rank == trump]

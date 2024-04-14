@@ -18,6 +18,12 @@ class DiffJudger:
             pile_score += 5
         return pile_score
 
+    def takes_pile(self, pile: list[Card], trump: str) -> int:
+        takes = 0
+        for i in range(1, len(pile)):
+            takes = i if self.beats(pile[takes], pile[i], trump) else takes
+        return takes
+
     def score_card(self, card: Card, trump: str) -> int:
         match card.rank:
             case 'A':

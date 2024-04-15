@@ -5,13 +5,13 @@ from .utility import score_card, takes_pile
 
 class DiffPile:
 
-    def __init__(self, first_player: int, number_of_players: int, trump: str) -> None:
+    def __init__(self, first_player: int, number_of_players: int, trump: str, is_last: bool = False) -> None:
         self.first_player = first_player
         self.current_player = first_player
         self.number_of_players = number_of_players
         self.trump = trump
         self.pile: list[Card] = []
-        self.score = 0
+        self.score = 5 if is_last else 0
 
     def play(self, card: Card) -> bool:
         if not self.is_done():

@@ -13,3 +13,10 @@ class DiffPlayer:
 
     def get_player_id(self):
         return self.player_id
+
+    def get_state(self):
+        return {
+            "hand": self.hand,
+            "score": self.score,
+            "prediction": self.prediction,
+        }

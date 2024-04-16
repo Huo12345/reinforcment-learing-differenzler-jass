@@ -3,6 +3,7 @@ from rlcard.games.base import Card
 from .dealer import DiffDealer
 from .pile import DiffPile
 from .player import DiffPlayer
+from .utility import find_legal_moves
 
 
 class DiffRound:
@@ -79,5 +80,6 @@ class DiffRound:
             "player": players[self.current_player].get_state(),
             "predictions": predictions,
             "round_scores": [p.round_score for p in players],
+            "legal_moves": find_legal_moves(self.current_pile.pile, players[self.current_player].hand, self.trump)
         }
 

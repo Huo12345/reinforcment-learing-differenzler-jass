@@ -13,7 +13,7 @@ def score_card(card: Card, trump: str) -> int:
             return 3
         case 'J':
             return 20 if card.suit == trump else 2
-        case '10':
+        case 'T':
             return 10
         case '9':
             return 14 if card.suit == trump else 0
@@ -38,9 +38,9 @@ def beats(first: Card, second: Card, trump: str) -> bool:
         return second.suit == trump
 
     if first.suit == trump:
-        order = ['6', '7', '8', '10', 'Q', 'K', 'A', '9', 'J']
+        order = ['6', '7', '8', 'T', 'Q', 'K', 'A', '9', 'J']
     else:
-        order = ['6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+        order = ['6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 
     return order.index(first.rank) < order.index(second.rank)
 
@@ -71,5 +71,5 @@ def find_legal_moves(pile: list[Card], hand: list[Card], trump: str) -> list[Car
 
 
 def highest_played_trump(played: list[Card], trump: str) -> Card | None:
-    trump_cards_played = [c for c in played if c.rank == trump]
+    trump_cards_played = [c for c in played if c.suit == trump]
     return reduce(lambda a, b: b if beats(a, b, trump) else a, trump_cards_played, None)

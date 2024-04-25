@@ -13,6 +13,7 @@ class DiffDealer:
         self.np_random = np_random
         self.deck = self.init_deck(n_players == 5)
         self.shuffle()
+        self.reference_dek = self.init_deck(n_players == 5)
         self.deal_ptr = 0
 
     def init_deck(self, five_players: bool) -> list[Card]:
@@ -30,7 +31,7 @@ class DiffDealer:
         self.deal_ptr = 0
 
     def deal_cards(self, player: DiffPlayer, n_cards: int) -> None:
-        player.hand.append(self.deck[self.deal_ptr:self.deal_ptr + n_cards])
+        player.hand.extend(sorted(self.deck[self.deal_ptr:self.deal_ptr + n_cards], key=lambda c: self.reference_dek.index(c)))
         self.deal_ptr += n_cards
 
     def show_last_card(self) -> Card:

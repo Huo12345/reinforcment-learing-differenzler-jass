@@ -24,13 +24,14 @@ class DiffGame:
     def configure(self):
         pass
 
-    def init_game(self):
+    def init_game(self) -> tuple[dict, int]:
         self.round = 0
         for player in self.players:
             player.score = 0
         self._start_new_round(self.players)
+        return self.get_state(self.players), self.current_round.current_player
 
-    def step(self, action: Card) -> type[dict, int]:
+    def step(self, action: Card) -> tuple[dict, int]:
         a = self.players[self.current_round.current_player].hand.index(action)
         self.current_round.proceed_round(self.players, a)
         if self.current_round.is_over():
@@ -39,8 +40,7 @@ class DiffGame:
                 self._start_new_round(self.players)
         return self.get_state(self.players), self.current_round.current_player
 
-    def _start_new_round(self, players: list[DiffPlayer]):
-        self.round += 1
+    def _start_new_round(self, players: list[DiffPlayer]) -> None:
         first_player = self.round % self.n_players
         self.current_round = DiffRound(self.n_players, first_player, self.dealer)
         self.current_round.deal_cards(players)
@@ -49,8 +49,11 @@ class DiffGame:
             prediction = self.prediction_strategy.get_prediction(player, self.get_state(players))
             self.current_round.make_prediction(players, prediction)
 
-    def _complete_round(self, players: list[DiffPlayer]):
-        for player in players:
+    def _complete_round(self, players: list[DiffPlayer]) -> None:
+        self.round += 1
+        for i in range(len(players)):
+            player = players[i]
+            self.prediction_strategy.provide_feedback(i, player.prediction, player.round_score)
             self.judger.score_player(player)
 
     def get_state(self, players: list[DiffPlayer]) -> dict:
@@ -60,4 +63,4 @@ class DiffGame:
         }
 
     def is_over(self) -> bool:
-        return self.round > self.rounds
+        return self.round >= self.rounds

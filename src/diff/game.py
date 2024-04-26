@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 
 from rlcard.games.base import Card
@@ -6,29 +8,41 @@ from .dealer import DiffDealer
 from .player import DiffPlayer
 from .judger import DiffJudger
 from .round import DiffRound
-from .prediction import PredictionStrategy
+from .prediction import PredictionStrategy, RandomPredictionStrategy
 
 
 class DiffGame:
-    def __init__(self, n_players: int, rounds: int, prediction_strategy: PredictionStrategy) -> None:
+    def __init__(self, allow_step_back=False, n_players=4) -> None:
+        self.allow_step_back = allow_step_back
+        if self.allow_step_back:
+            self.history: list[tuple[int, DiffRound, list[DiffPlayer]]] = []
         self.np_random = np.random.RandomState()
         self.n_players = n_players
-        self.rounds = rounds
+        self.rounds = 9
         self.round = 0
         self.dealer = DiffDealer(self.np_random, self.n_players)
         self.players = [DiffPlayer(i, self.np_random) for i in range(self.n_players)]
         self.judger = DiffJudger()
-        self.current_round = DiffRound(n_players, 0, self.dealer)
-        self.prediction_strategy = prediction_strategy
+        self.current_round = DiffRound(self.n_players, 0, self.dealer)
+        self.prediction_strategy: PredictionStrategy = RandomPredictionStrategy()
 
-    def configure(self):
-        pass
+    def configure(self, game_config: dict) -> None:
+        if game_config['players'] is not None:
+            self.n_players = game_config['players']
+            self.dealer = DiffDealer(self.np_random, self.n_players)
+            self.players = [DiffPlayer(i, self.np_random) for i in range(self.n_players)]
+            self.current_round = DiffRound(self.n_players, 0, self.dealer)
+        if game_config['rounds'] is not None:
+            self.rounds = game_config['rounds']
+        if game_config['prediction_strategy'] is not None:
+            self.prediction_strategy = game_config['prediction_strategy']
 
     def init_game(self) -> tuple[dict, int]:
         self.round = 0
         for player in self.players:
             player.score = 0
         self._start_new_round(self.players)
+        self._add_state_to_history()
         return self.get_state(self.players), self.current_round.current_player
 
     def step(self, action: Card) -> tuple[dict, int]:
@@ -38,6 +52,7 @@ class DiffGame:
             self._complete_round(self.players)
             if not self.is_over():
                 self._start_new_round(self.players)
+        self._add_state_to_history()
         return self.get_state(self.players), self.current_round.current_player
 
     def _start_new_round(self, players: list[DiffPlayer]) -> None:
@@ -64,3 +79,13 @@ class DiffGame:
 
     def is_over(self) -> bool:
         return self.round >= self.rounds
+
+    def _add_state_to_history(self) -> None:
+        if self.allow_step_back:
+            self.history.append((self.round, deepcopy(self.current_round), deepcopy(self.players)))
+
+    def step_back(self) -> bool:
+        if not self.allow_step_back or len(self.history) == 0:
+            return False
+        self.round, self.current_round, self.players = self.history.pop()
+        return True

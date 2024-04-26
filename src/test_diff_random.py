@@ -1,13 +1,8 @@
 import random
 
-from diff import DiffGame, PredictionStrategy
+from diff import DiffGame, FixedPredictionStrategy
 
 from rlcard.utils.utils import print_card
-
-
-class FixedPredictinStrategy(PredictionStrategy):
-    def get_prediction(self, player: int, game_state: dict) -> int:
-        return 157 // 4
 
 
 def display_state(state: dict) -> None:
@@ -30,7 +25,12 @@ def display_state(state: dict) -> None:
 
 
 def run_game():
-    game = DiffGame(4, 2, FixedPredictinStrategy())
+    game = DiffGame()
+    game.configure({
+        'players': 4,
+        'rounds': 2,
+        'prediction_strategy': FixedPredictionStrategy(157 // 4)
+    })
 
     state, _ = game.init_game()
     while not game.is_over():

@@ -1,2 +1,2 @@
 from .game import DiffGame
-from .prediction import PredictionStrategy, CompositePredictionStrategy
+from .prediction import PredictionStrategy, CompositePredictionStrategy, FixedPredictionStrategy, RandomPredictionStrategy

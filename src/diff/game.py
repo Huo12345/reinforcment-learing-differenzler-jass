@@ -21,16 +21,16 @@ class DiffGame:
         self.rounds = 9
         self.round = 0
         self.dealer = DiffDealer(self.np_random, self.n_players)
-        self.players = [DiffPlayer(i, self.np_random) for i in range(self.n_players)]
+        self.players = [DiffPlayer(i) for i in range(self.n_players)]
         self.judger = DiffJudger()
         self.current_round = DiffRound(self.n_players, 0, self.dealer)
-        self.prediction_strategy: PredictionStrategy = RandomPredictionStrategy()
+        self.prediction_strategy: PredictionStrategy = RandomPredictionStrategy(self.np_random)
 
     def configure(self, game_config: dict) -> None:
         if game_config['players'] is not None:
             self.n_players = game_config['players']
             self.dealer = DiffDealer(self.np_random, self.n_players)
-            self.players = [DiffPlayer(i, self.np_random) for i in range(self.n_players)]
+            self.players = [DiffPlayer(i) for i in range(self.n_players)]
             self.current_round = DiffRound(self.n_players, 0, self.dealer)
         if game_config['rounds'] is not None:
             self.rounds = game_config['rounds']
@@ -38,22 +38,26 @@ class DiffGame:
             self.prediction_strategy = game_config['prediction_strategy']
 
     def init_game(self) -> tuple[dict, int]:
+        if self.allow_step_back:
+            self.history = []
         self.round = 0
         for player in self.players:
             player.score = 0
         self._start_new_round(self.players)
-        self._add_state_to_history()
-        return self.get_state(self.players), self.current_round.current_player
+        return self.get_state(self.current_round.current_player), self.current_round.current_player
 
-    def step(self, action: Card) -> tuple[dict, int]:
+    def step(self, action: str) -> tuple[dict, int]:
+        self._add_state_to_history()
+
+        action = Card(action[0], action[1])
+
         a = self.players[self.current_round.current_player].hand.index(action)
         self.current_round.proceed_round(self.players, a)
         if self.current_round.is_over():
             self._complete_round(self.players)
             if not self.is_over():
                 self._start_new_round(self.players)
-        self._add_state_to_history()
-        return self.get_state(self.players), self.current_round.current_player
+        return self.get_state(self.current_round.current_player), self.current_round.current_player
 
     def _start_new_round(self, players: list[DiffPlayer]) -> None:
         first_player = self.round % self.n_players
@@ -61,7 +65,8 @@ class DiffGame:
         self.current_round.deal_cards(players)
         for i in range(self.n_players):
             player = first_player + i % self.n_players
-            prediction = self.prediction_strategy.get_prediction(player, self.get_state(players))
+            state = self.get_state(self.current_round.current_player)
+            prediction = self.prediction_strategy.get_prediction(player, state)
             self.current_round.make_prediction(players, prediction)
 
     def _complete_round(self, players: list[DiffPlayer]) -> None:
@@ -71,10 +76,16 @@ class DiffGame:
             self.prediction_strategy.provide_feedback(i, player.prediction, player.round_score)
             self.judger.score_player(player)
 
-    def get_state(self, players: list[DiffPlayer]) -> dict:
+    def get_state(self, player: int) -> dict:
         return {
-            "current_round": self.current_round.get_state(players),
-            "player_scores": [p.score for p in players]
+            "current_round": self.current_round.get_state(self.players, player),
+            "player_scores": [p.score for p in self.players]
+        }
+
+    def get_full_state(self) -> dict:
+        return {
+            "current_round": self.current_round.get_full_state(self.players),
+            "player_scores": [p.score for p in self.players]
         }
 
     def is_over(self) -> bool:
@@ -89,3 +100,19 @@ class DiffGame:
             return False
         self.round, self.current_round, self.players = self.history.pop()
         return True
+
+    def get_num_players(self) -> int:
+        return self.n_players
+
+    def get_num_actions(self) -> int:
+        return len(self.dealer.deck)
+
+    def get_player_id(self) -> int:
+        return self.current_round.current_player
+
+    def get_legal_actions(self) -> list[Card]:
+        return self.current_round.get_legal_actions(self.players, self.current_round.current_player)
+
+    def get_payoffs(self) -> list[float]:
+        max_pts = 157 * self.round
+        return [-1 * (p.score / max_pts) for p in self.players]

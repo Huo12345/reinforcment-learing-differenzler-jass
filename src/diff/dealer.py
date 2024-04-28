@@ -2,7 +2,8 @@ import numpy as np
 
 from rlcard.games.base import Card
 
-from src.diff.player import DiffPlayer
+from .player import DiffPlayer
+from .utility import get_full_deck
 
 
 class DiffDealer:
@@ -17,9 +18,7 @@ class DiffDealer:
         self.deal_ptr = 0
 
     def init_deck(self, five_players: bool) -> list[Card]:
-        suits = ['S', 'H', 'D', 'C']
-        ranks = ['6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
-        deck = [Card(s, r) for s in suits for r in ranks]
+        deck = get_full_deck()
         if five_players:
             deck = deck[1:]
         return deck

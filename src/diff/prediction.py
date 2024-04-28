@@ -1,4 +1,4 @@
-import random
+import numpy as np
 
 
 class PredictionStrategy:
@@ -23,8 +23,11 @@ class CompositePredictionStrategy(PredictionStrategy):
 
 class RandomPredictionStrategy(PredictionStrategy):
 
+    def __init__(self, np_random: np.random) -> None:
+        self.np_random = np_random
+
     def get_prediction(self, player: int, game_state: dict) -> int:
-        return random.randint(0, 157)
+        return self.np_random.randint(158)
 
 
 class FixedPredictionStrategy(PredictionStrategy):

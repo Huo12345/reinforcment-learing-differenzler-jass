@@ -65,7 +65,7 @@ class DiffRound:
     def predictions_over(self):
         return self.predictions >= self.n_players
 
-    def get_state(self, players: list[DiffPlayer]) -> dict:
+    def get_state(self, players: list[DiffPlayer], player: int) -> dict:
         predictions = [p.prediction for p in players]
         if not self.predictions_over():
             for i in range(self.n_players - self.predictions):
@@ -78,9 +78,16 @@ class DiffRound:
             "current_pile": self.current_pile.get_state(),
             "current_player": self.current_player,
             "played_piles": [p.get_state() for p in self.played_piles],
-            "player": players[self.current_player].get_state(),
+            "player": players[player].get_state(),
             "predictions": predictions,
             "round_scores": [p.round_score for p in players],
-            "legal_moves": find_legal_moves(self.current_pile.pile, players[self.current_player].hand, self.trump)
+            "legal_moves": find_legal_moves(self.current_pile.pile, players[player].hand, self.trump)
         }
 
+    def get_legal_actions(self, players: list[DiffPlayer], player: int) -> list[Card]:
+        return find_legal_moves(self.current_pile.pile, players[player].hand, self.trump)
+
+    def get_full_state(self, players: list[DiffPlayer]):
+        state = self.get_state(players, self.current_player)
+        del state['player']
+        state['players'] = [p.get_state() for p in players]

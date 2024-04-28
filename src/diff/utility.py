@@ -73,3 +73,9 @@ def find_legal_moves(pile: list[Card], hand: list[Card], trump: str) -> list[Car
 def highest_played_trump(played: list[Card], trump: str) -> Card | None:
     trump_cards_played = [c for c in played if c.suit == trump]
     return reduce(lambda a, b: b if beats(a, b, trump) else a, trump_cards_played, None)
+
+
+def get_full_deck() -> list[Card]:
+    suits = ['S', 'H', 'D', 'C']
+    ranks = ['6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+    return [Card(s, r) for s in suits for r in ranks]

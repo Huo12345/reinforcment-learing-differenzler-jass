@@ -11,32 +11,63 @@ from .utility import get_full_deck
 DEFAULT_GAME_CONFIG = {
     'players': 4,
     'rounds': 2,
-    'prediction_strategy': FixedPredictionStrategy(157 // 4)
+    'prediction_strategy': FixedPredictionStrategy(157 // 4),
+    'reward_strategy': 'default',
+    'state_representation': 'default'
 }
 
 
-class DivEnv(Env):
+class DiffEnv(Env):
 
-    def __init__(self, config) -> None:
+    def __init__(self, config=None) -> None:
         self.name = 'differenzler'
         self.default_game_config = DEFAULT_GAME_CONFIG
+        if config is None:
+            config = DEFAULT_GAME_CONFIG
         self.game = DiffGame()
+        self.game.configure(config)
         super().__init__(config)
-        self.state_shape = [[41, 40] for _ in range(self.num_players)]
+        self.compressed_state = 'state_representation' in config and config['state_representation'] == 'compressed'
+        self.state_shape = [[4, 36] for _ in range(self.num_players)] if self.compressed_state else [[42, 40] for _ in range(self.num_players)]
         self.action_shape = [36 for _ in range(self.num_players)]
         self.reference_deck = get_full_deck()
 
     def _extract_state(self, state: dict) -> dict:
         return {
-            'obs': self._parse_state_to_ndarray(state),
+            'obs': self._parse_state_to_compressed_ndarray(state) if self.compressed_state else self._parse_state_to_ndarray(state),
             'legal_actions': self._get_legal_actions(),
             'raw_obs': state,
             'raw_legal_actions': state['current_round']['legal_moves'],
             'action_record': self.action_recorder
         }
 
+    def _parse_state_to_compressed_ndarray(self, state: dict) -> ndarray:
+        obs = np.zeros((4, 36), dtype=np.float32)
+
+        # Parsing history
+        for pile in state['current_round']['played_piles']:
+            for card in pile['played_cards']:
+                obs[0, self.reference_deck.index(card)] = 1
+
+        # Parsing current pile
+        for card in state['current_round']['current_pile']['played_cards']:
+            obs[1, self.reference_deck.index(card)] = 1
+
+        # Parsing current hand
+        for card in state['current_round']['player']['hand']:
+            obs[2][self.reference_deck.index(card)] = 1
+
+        # Parsing scores and predictions
+        obs[3][state['current_round']['current_player']] = 1
+        for i, pred in enumerate(state['current_round']['predictions']):
+            obs[3][i + 4] = pred / 157. if pred is not None else 0
+        for i, score in enumerate(state['current_round']['round_scores']):
+            obs[3][i + 8] = score / 157.
+
+        return obs
+
     def _parse_state_to_ndarray(self, state: dict) -> ndarray:
-        obs = np.zeros((41, 40), dtype=int)
+        obs = np.zeros((42, 40), dtype=np.float32)
 
         # Paring history
         for i in range(len(state['current_round']['played_piles'])):
@@ -62,6 +93,14 @@ class DivEnv(Env):
         obs[40][player_id] = 1
         for card in hand:
             obs[40][4 + self.reference_deck.index(card)] = 1
+
+        # Parsing scores and predictions
+        obs[41][state['current_round']['current_player']] = 1
+        for i, pred in enumerate(state['current_round']['predictions']):
+            obs[41][i + 4] = pred / 157. if pred is not None else 0
+        for i, score in enumerate(state['current_round']['round_scores']):
+            obs[41][i + 8] = score / 157.
+
         return obs
 
     def get_payoffs(self) -> ndarray:

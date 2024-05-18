@@ -25,17 +25,20 @@ class DiffGame:
         self.judger = DiffJudger()
         self.current_round = DiffRound(self.n_players, 0, self.dealer)
         self.prediction_strategy: PredictionStrategy = RandomPredictionStrategy(self.np_random)
+        self.reward_strategy = 'default'
 
     def configure(self, game_config: dict) -> None:
-        if game_config['players'] is not None:
+        if 'players' in game_config and game_config['players'] is not None:
             self.n_players = game_config['players']
             self.dealer = DiffDealer(self.np_random, self.n_players)
             self.players = [DiffPlayer(i) for i in range(self.n_players)]
             self.current_round = DiffRound(self.n_players, 0, self.dealer)
-        if game_config['rounds'] is not None:
+        if 'rounds' in game_config and game_config['rounds'] is not None:
             self.rounds = game_config['rounds']
-        if game_config['prediction_strategy'] is not None:
+        if 'prediction_strategy' in game_config and game_config['prediction_strategy'] is not None:
             self.prediction_strategy = game_config['prediction_strategy']
+        if 'reward_strategy' in game_config and game_config['reward_strategy'] is not None:
+            self.reward_strategy = game_config['reward_strategy']
 
     def init_game(self) -> tuple[dict, int]:
         if self.allow_step_back:
@@ -114,5 +117,17 @@ class DiffGame:
         return self.current_round.get_legal_actions(self.players, self.current_round.current_player)
 
     def get_payoffs(self) -> list[float]:
+        scores = [p.score for p in self.players]
+        if self.reward_strategy == 'winner_takes_all':
+            return self._winner_takes_all_payoff(scores)
+        return self._default_payoff(scores)
+
+    def _winner_takes_all_payoff(self, scores: list[float]) -> list[float]:
+        best = min(scores)
+        results = [1 if score == best else 0 for score in scores]
+        norm = sum(results)
+        return [i / norm for i in results]
+
+    def _default_payoff(self, scores: list[float]) -> list[float]:
         max_pts = 157 * self.round
-        return [-1 * (p.score / max_pts) for p in self.players]
+        return [-1 * (score / max_pts) for score in scores]

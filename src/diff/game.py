@@ -120,14 +120,27 @@ class DiffGame:
         scores = [p.score for p in self.players]
         if self.reward_strategy == 'winner_takes_all':
             return self._winner_takes_all_payoff(scores)
+        if self.reward_strategy == 'constant':
+            return self._constant_payoff(scores)
         return self._default_payoff(scores)
 
     def _winner_takes_all_payoff(self, scores: list[float]) -> list[float]:
         best = min(scores)
+        if best == 0:
+            return scores
         results = [1 if score == best else 0 for score in scores]
         norm = sum(results)
         return [i / norm for i in results]
 
     def _default_payoff(self, scores: list[float]) -> list[float]:
-        max_pts = 157 * self.round
-        return [-1 * (score / max_pts) for score in scores]
+        if self.round == 0:
+            return [0 for _ in range(self.n_players)]
+        max_pts = 157. * self.round
+        return [-1. * (score / max_pts) for score in scores]
+
+    def _constant_payoff(self, scores: list[float]):
+        if self.current_round is None or self.current_round.is_over():
+            return self._default_payoff(scores)
+        max_pts = 157. * (self.round + 1)
+        addition = [abs(p.prediction - p.round_score) for p in self.players]
+        return [-1. * (a + b) / max_pts for (a, b) in zip(scores, addition)]

@@ -5,7 +5,18 @@ from diff import DiffGame, FixedPredictionStrategy
 from rlcard.utils.utils import print_card
 
 
-def display_state(state: dict) -> None:
+TRAIN_CONFIG = {
+    'players': 4,
+    'rounds': 1,
+    'prediction_strategy': FixedPredictionStrategy(157),
+    'reward_strategy': 'default',
+    'state_representation': 'compressed',
+    'allow_step_back': False,
+    'seed': random.randint(1, 999999)
+}
+
+
+def display_state(state: dict, payoff: list[float]) -> None:
     print()
     print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
     print()
@@ -22,25 +33,25 @@ def display_state(state: dict) -> None:
     print_card(state['current_round']['player']['hand'])
     print("===================== Legal Moves =====================")
     print_card(state['current_round']['legal_moves'])
+    print("===================== Payoffs =====================")
+    print([p * 157 for p in payoff])
 
 
 def run_game():
     game = DiffGame()
-    game.configure({
-        'players': 4,
-        'rounds': 2,
-        'prediction_strategy': FixedPredictionStrategy(157 // 4)
-    })
+    game.configure(TRAIN_CONFIG)
 
     state, _ = game.init_game()
+    payoff = [0, 0, 0, 0]
     while not game.is_over():
-        display_state(state)
+        display_state(state, payoff)
         action = random.choice(state['current_round']['legal_moves'])
         print("===================== Plays =====================")
         print_card([action])
         state, _ = game.step(action.suit + action.rank)
+        payoff = game.get_payoffs()
 
-    display_state(state)
+    display_state(state, payoff)
 
 
 run_game()

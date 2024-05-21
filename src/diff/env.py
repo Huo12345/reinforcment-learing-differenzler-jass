@@ -42,7 +42,7 @@ class DiffEnv(Env):
         }
 
     def _parse_state_to_compressed_ndarray(self, state: dict) -> ndarray:
-        obs = np.zeros((4, 36), dtype=np.float32)
+        obs = np.zeros((4, 36), dtype=int)
 
         # Parsing history
         for pile in state['current_round']['played_piles']:
@@ -60,14 +60,14 @@ class DiffEnv(Env):
         # Parsing scores and predictions
         obs[3][state['current_round']['current_player']] = 1
         for i, pred in enumerate(state['current_round']['predictions']):
-            obs[3][i + 4] = pred / 157. if pred is not None else 0
+            obs[3][i + 4] = pred if pred is not None else 0
         for i, score in enumerate(state['current_round']['round_scores']):
-            obs[3][i + 8] = score / 157.
+            obs[3][i + 8] = score
 
         return obs
 
     def _parse_state_to_ndarray(self, state: dict) -> ndarray:
-        obs = np.zeros((42, 40), dtype=np.float32)
+        obs = np.zeros((42, 40), dtype=int)
 
         # Paring history
         for i in range(len(state['current_round']['played_piles'])):
@@ -97,9 +97,9 @@ class DiffEnv(Env):
         # Parsing scores and predictions
         obs[41][state['current_round']['current_player']] = 1
         for i, pred in enumerate(state['current_round']['predictions']):
-            obs[41][i + 4] = pred / 157. if pred is not None else 0
+            obs[41][i + 4] = pred if pred is not None else 0
         for i, score in enumerate(state['current_round']['round_scores']):
-            obs[41][i + 8] = score / 157.
+            obs[41][i + 8] = score
 
         return obs
 

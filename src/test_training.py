@@ -13,8 +13,9 @@ TRAIN_CONFIG = {
     'players': 4,
     'rounds': 1,
     'prediction_strategy': FixedPredictionStrategy(157),
-    'reward_strategy': 'constant',
-    'state_representation': 'compressed',
+    'reward_strategy': 'default',
+    'state_representation': 'enhanced',
+    'first_player_strategy': 'random',
     'allow_step_back': False,
     'seed': random.randint(1, 999999)
 }
@@ -24,7 +25,8 @@ TEST_CONFIG = {
     'rounds': 9,
     'prediction_strategy': FixedPredictionStrategy(157),
     'reward_strategy': 'winner_takes_all',
-    'state_representation': 'compressed',
+    'state_representation': 'enhanced',
+    'first_player_strategy': 'random',
     'allow_step_back': False,
     'seed': random.randint(1, 999999)
 }
@@ -34,7 +36,7 @@ def train_agent(
         log_dir='log',
         save_every=1000,
         evaluate_every=1000,
-        num_episodes=20000,
+        num_episodes=50000,
         num_eval_games=100
 ):
     device = get_device()
@@ -50,9 +52,9 @@ def train_agent(
         device=device,
         save_path=log_dir,
         save_every=save_every,
-        replay_memory_init_size=200,
-        batch_size=128,
-        epsilon_decay_steps=50000
+        replay_memory_init_size=900,
+        batch_size=256,
+        epsilon_decay_steps=250000
     )
 
     agents = [agent] + [RandomAgent(num_actions=train_env.num_actions) for _ in range(1, train_env.num_players)]

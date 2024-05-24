@@ -73,7 +73,7 @@ class DiffRound:
 
         return {
             "trump": self.trump,
-            "trump_card": self.trump_card,
+            "trump_card": self.trump_card.get_index(),
             "first_player": self.first_player,
             "current_pile": self.current_pile.get_state(),
             "current_player": self.current_player,
@@ -81,11 +81,11 @@ class DiffRound:
             "player": players[player].get_state(),
             "predictions": predictions,
             "round_scores": [p.round_score for p in players],
-            "legal_moves": find_legal_moves(self.current_pile.pile, players[player].hand, self.trump)
+            "legal_moves": [c.get_index() for c in find_legal_moves(self.current_pile.pile, players[player].hand, self.trump)]
         }
 
-    def get_legal_actions(self, players: list[DiffPlayer], player: int) -> list[Card]:
-        return find_legal_moves(self.current_pile.pile, players[player].hand, self.trump)
+    def get_legal_actions(self, players: list[DiffPlayer], player: int) -> list[str]:
+        return [c.get_index() for c in find_legal_moves(self.current_pile.pile, players[player].hand, self.trump)]
 
     def get_full_state(self, players: list[DiffPlayer]):
         state = self.get_state(players, self.current_player)

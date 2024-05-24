@@ -2,13 +2,12 @@ from copy import deepcopy
 
 import numpy as np
 
-from rlcard.games.base import Card
-
 from .dealer import DiffDealer
 from .player import DiffPlayer
 from .judger import DiffJudger
 from .round import DiffRound
 from .prediction import PredictionStrategy, RandomPredictionStrategy
+from .utility import card_from_str
 
 
 class DiffGame:
@@ -26,6 +25,7 @@ class DiffGame:
         self.current_round = DiffRound(self.n_players, 0, self.dealer)
         self.prediction_strategy: PredictionStrategy = RandomPredictionStrategy(self.np_random)
         self.reward_strategy = 'default'
+        self.first_player_strategy = 'normal'
 
     def configure(self, game_config: dict) -> None:
         if 'players' in game_config and game_config['players'] is not None:
@@ -39,6 +39,8 @@ class DiffGame:
             self.prediction_strategy = game_config['prediction_strategy']
         if 'reward_strategy' in game_config and game_config['reward_strategy'] is not None:
             self.reward_strategy = game_config['reward_strategy']
+        if 'first_player_strategy' in game_config and game_config['first_player_strategy'] is not None:
+            self.first_player_strategy = game_config['first_player_strategy']
 
     def init_game(self) -> tuple[dict, int]:
         if self.allow_step_back:
@@ -52,7 +54,7 @@ class DiffGame:
     def step(self, action: str) -> tuple[dict, int]:
         self._add_state_to_history()
 
-        action = Card(action[0], action[1])
+        action = card_from_str(action)
 
         a = self.players[self.current_round.current_player].hand.index(action)
         self.current_round.proceed_round(self.players, a)
@@ -63,12 +65,15 @@ class DiffGame:
         return self.get_state(self.current_round.current_player), self.current_round.current_player
 
     def _start_new_round(self, players: list[DiffPlayer]) -> None:
-        first_player = self.round % self.n_players
+        if self.round == 0 and self.first_player_strategy == 'random':
+            first_player = self.np_random.randint(0, 4)
+        else:
+            first_player = self.round % self.n_players
         self.current_round = DiffRound(self.n_players, first_player, self.dealer)
         self.current_round.deal_cards(players)
         for i in range(self.n_players):
-            player = first_player + i % self.n_players
-            state = self.get_state(self.current_round.current_player)
+            player = (first_player + i) % self.n_players
+            state = self.get_state(player)
             prediction = self.prediction_strategy.get_prediction(player, state)
             self.current_round.make_prediction(players, prediction)
 
@@ -113,7 +118,7 @@ class DiffGame:
     def get_player_id(self) -> int:
         return self.current_round.current_player
 
-    def get_legal_actions(self) -> list[Card]:
+    def get_legal_actions(self) -> list[str]:
         return self.current_round.get_legal_actions(self.players, self.current_round.current_player)
 
     def get_payoffs(self) -> list[float]:
@@ -125,9 +130,9 @@ class DiffGame:
         return self._default_payoff(scores)
 
     def _winner_takes_all_payoff(self, scores: list[float]) -> list[float]:
+        if self.round == 0:
+            return [0 for _ in range(self.n_players)]
         best = min(scores)
-        if best == 0:
-            return scores
         results = [1 if score == best else 0 for score in scores]
         norm = sum(results)
         return [i / norm for i in results]

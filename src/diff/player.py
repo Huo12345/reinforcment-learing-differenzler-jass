@@ -16,7 +16,7 @@ class DiffPlayer:
     def get_state(self):
         return {
             "id": self.player_id,
-            "hand": self.hand,
+            "hand": [c.get_index() for c in self.hand],
             "score": self.score,
             "prediction": self.prediction,
         }

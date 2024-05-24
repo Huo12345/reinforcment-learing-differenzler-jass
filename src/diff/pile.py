@@ -41,6 +41,6 @@ class DiffPile:
     def get_state(self) -> dict:
         return {
             "first_player": self.first_player,
-            "played_cards": self.pile,
+            "played_cards": [c.get_index() for c in self.pile],
             "score": self.score
         }

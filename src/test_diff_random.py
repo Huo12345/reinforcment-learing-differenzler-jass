@@ -48,7 +48,7 @@ def run_game():
         action = random.choice(state['current_round']['legal_moves'])
         print("===================== Plays =====================")
         print_card([action])
-        state, _ = game.step(action.suit + action.rank)
+        state, _ = game.step(action)
         payoff = game.get_payoffs()
 
     display_state(state, payoff)

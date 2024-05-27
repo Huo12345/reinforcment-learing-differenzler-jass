@@ -8,6 +8,7 @@ from rlcard.utils import get_device, Logger, reorganize, tournament, plot_curve
 
 from diff.env import DiffEnv
 from diff.prediction import FixedPredictionStrategy
+from agents import LookAheadDqnAgent
 
 TRAIN_CONFIG = {
     'players': 4,
@@ -56,7 +57,7 @@ def train_agent(
     test_env = DiffEnv(TEST_CONFIG)
     test_env2 = DiffEnv(TEST_CONFIG_2)
 
-    agent = DQNAgent(
+    agent = LookAheadDqnAgent(
         num_actions=train_env.num_actions,
         state_shape=train_env.state_shape[0],
         # mlp_layers=[256, 128, 64],
@@ -66,7 +67,10 @@ def train_agent(
         save_every=save_every,
         replay_memory_init_size=900,
         batch_size=256,
-        epsilon_decay_steps=250000
+        epsilon_decay_steps=250000,
+        look_ahead_samples=10,
+        look_ahead_train=False,
+        look_ahead_eval=True
     )
 
     performance_1_log = os.path.join(log_dir, 'winrate')

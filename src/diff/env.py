@@ -32,7 +32,7 @@ class DiffEnv(Env):
         if self.state_rep == 'compressed':
             self.state_shape = [[4, 36] for _ in range(self.num_players)]
         elif self.state_rep == 'enhanced':
-            self.state_shape = [[4, 36] for _ in range(self.num_players)]
+            self.state_shape = [[6, 36] for _ in range(self.num_players)]
         else:
             self.state_shape = [[42, 40] for _ in range(self.num_players)]
         self.action_shape = [36 for _ in range(self.num_players)]
@@ -83,7 +83,7 @@ class DiffEnv(Env):
         return obs
 
     def _parse_state_to_enhanced_ndarray(self, state: dict) -> ndarray:
-        obs = np.zeros((4, 36), dtype=int)
+        obs = np.zeros((6, 36), dtype=int)
 
         # Parsing history
         for pile in state['current_round']['played_piles']:
@@ -112,13 +112,13 @@ class DiffEnv(Env):
         followed = followed_suit(state['current_round']['played_piles'], self.num_players, state['current_round']['trump'])
         obs[3, 16:32] = [p for s in followed for p in s]
 
-        # # Encoding strong cards
-        # for card in find_strong_cards(state['current_round']['played_piles'], state['current_round']['player']['hand'], state['current_round']['trump']):
-        #     obs[4, self.reference_deck.index(card_from_str(card))] = 1
-        #
-        # # Encoding weak cards
-        # for card in find_weak_cards(state['current_round']['played_piles'], state['current_round']['player']['hand'], state['current_round']['trump']):
-        #     obs[4, self.reference_deck.index(card_from_str(card))] = 1
+        # Encoding strong cards
+        for card in find_strong_cards(state['current_round']['played_piles'], state['current_round']['player']['hand'], state['current_round']['trump']):
+            obs[4, self.reference_deck.index(card_from_str(card))] = 1
+
+        # Encoding weak cards
+        for card in find_weak_cards(state['current_round']['played_piles'], state['current_round']['player']['hand'], state['current_round']['trump']):
+            obs[4, self.reference_deck.index(card_from_str(card))] = 1
 
         return obs
 

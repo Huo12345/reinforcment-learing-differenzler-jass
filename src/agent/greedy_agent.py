@@ -1,16 +1,34 @@
 import numpy as np
+from numpy import ndarray
 from itertools import combinations
+
+from rlcard.utils import Card
+
 from src.diff.utility import score_card, beats, get_full_deck, card_from_str
 
+
 class GreedyAgent:
-    def __init__(self, semi_greedy=False):
+    """
+    Agent that calculates the expected value of the pile after playing each legal action and plays the action that
+    minimizes the difference between the current score and the prediction.
+    """
+    def __init__(self, semi_greedy: bool = False) -> None:
+        """
+        Initializes the greedy agent.
+
+        :param semi_greedy: If True uses soft-max across the expected values for each action and samples according to
+            that distribution. Otherwise, uses argmax on the expected values.
+        """
         self.semi_greedy = semi_greedy
         self.reference_deck = get_full_deck()
         self.use_raw = True
 
-    def evaluate_state(self, state, action):
+    def evaluate_state(self, state: dict, action: Card) -> int:
         """
-        This function tries to estimate how many points are to be made from a pile when playing action
+        This function tries to estimate how many points are to be made from a pile when playing an action.
+
+        :param state: Observation of the current game state from the perspective of the current player.
+        :param action: Action for which to calculate the expected value.
         """
         state = state['raw_obs']
         current_round = state['current_round']
@@ -57,7 +75,13 @@ class GreedyAgent:
 
         return score + expected_score
 
-    def select_action_probability(self, state):
+    def select_action_probability(self, state: dict) -> ndarray:
+        """
+        Calculates the probabilities to for taking an action based on soft max of the estimated values.
+
+        :param state: Observation of the current game state from the perspective of the current player.
+        :return:
+        """
         current_round = state['raw_obs']['current_round']
         legal_actions = [card_from_str(c) for c in current_round['legal_moves']]
         player = current_round['current_player']
@@ -73,20 +97,38 @@ class GreedyAgent:
 
         if self.semi_greedy:
             # Sample from softmax probabilities
-            probabilities = np.exp(action_values - np.max(action_values))  # for numerical stability
+            probabilities = np.exp(np.array(action_values) - np.max(action_values))  # for numerical stability
             probabilities /= np.sum(probabilities)
         else:
             # Greedy choice
             action_index = np.argmax(action_values)
-            probabilities = [0 if i != action_index else 1 for i in range(len(legal_actions))]
+            probabilities = np.array([0 if i != action_index else 1 for i in range(len(legal_actions))])
 
         return probabilities
 
-    def step(self, state):
+    def step(self, state: dict) -> str:
+        """
+        Calculates the next step to be taken based on the partial observation for the current player.
+
+        :param state: Observation of the current game state from the perspective of the current player.
+        :return: The action to take.
+        """
         probabilities = self.select_action_probability(state)
         legal_actions = state['raw_obs']['current_round']['legal_moves']
         action_index = np.random.choice(len(legal_actions), p=probabilities)
         return legal_actions[action_index]
 
-    def eval_step(self, state):
-        return self.step(state), {}
+    def eval_step(self, state: dict) -> tuple[str, dict]:
+        """
+        Calculates the next step to be taken based on the partial observation for the current player.
+
+        :param state: Observation of the current game state from the perspective of the current player.
+        :return: Tuple containing the action to take and infos to analyse the decision.
+        """
+        probabilities = self.select_action_probability(state)
+        legal_actions = state['raw_obs']['current_round']['legal_moves']
+        action_index = np.random.choice(len(legal_actions), p=probabilities)
+        info = {
+            'values': {v: probabilities[i] for i, v in enumerate(state['raw_obs']['current_round']['legal_moves'])}
+        }
+        return legal_actions[action_index], info

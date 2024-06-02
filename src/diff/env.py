@@ -34,11 +34,11 @@ class DiffEnv(Env):
         self.default_game_config = DEFAULT_GAME_CONFIG
         if config is None:
             config = DEFAULT_GAME_CONFIG
-        super().__init__(config)
 
         # Initializing Game
         self.game = DiffGame()
         self.game.configure(config)
+        super().__init__(config)
 
         # Preparing state representation
         self.state_rep = config['state_representation'] if 'state_representation' in config else 'default'

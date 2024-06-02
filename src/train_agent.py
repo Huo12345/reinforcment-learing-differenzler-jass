@@ -78,7 +78,7 @@ def train_agent(args: argparse.Namespace) -> None:
         save_every=args.save_every,
         replay_memory_init_size=args.init_memory_size,
         batch_size=args.batch_size,
-        epsilon_decay_steps=args.epsilon_decay_steps,
+        epsilon_decay_steps=args.epsilon_decay_steps * 9,  # Each game in training has 9 steps
         train_every=args.train_every,
     )
 

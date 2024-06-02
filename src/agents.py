@@ -3,6 +3,7 @@ import random
 from copy import deepcopy
 
 from rlcard.agents import DQNAgent
+from rlcard.agents.dqn_agent import Estimator, Memory
 from diff.utility import get_full_deck, find_legal_moves, takes_pile, score_card
 
 class LookAheadDqnAgent(DQNAgent):
@@ -37,6 +38,42 @@ class LookAheadDqnAgent(DQNAgent):
         self.look_ahead_train = look_ahead_train
         self.look_ahead_eval = look_ahead_eval
         self.reference_deck = get_full_deck()
+
+    @classmethod
+    def from_checkpoint(cls, checkpoint,
+                        look_ahead_depth=1,
+                        look_ahead_samples=100,
+                        look_ahead_train=True,
+                        look_ahead_eval=False):
+
+        agent_instance = cls(
+            replay_memory_size=checkpoint['memory']['memory_size'],
+            update_target_estimator_every=checkpoint['update_target_estimator_every'],
+            discount_factor=checkpoint['discount_factor'],
+            epsilon_start=checkpoint['epsilon_start'],
+            epsilon_end=checkpoint['epsilon_end'],
+            epsilon_decay_steps=checkpoint['epsilon_decay_steps'],
+            batch_size=checkpoint['batch_size'],
+            num_actions=checkpoint['num_actions'],
+            device=checkpoint['device'],
+            state_shape=checkpoint['q_estimator']['state_shape'],
+            mlp_layers=checkpoint['q_estimator']['mlp_layers'],
+            train_every=checkpoint['train_every']
+        )
+
+        agent_instance.look_ahead_depth = look_ahead_depth
+        agent_instance.look_ahead_samples = look_ahead_samples
+        agent_instance.look_ahead_train = look_ahead_train
+        agent_instance.look_ahead_eval = look_ahead_eval
+
+        agent_instance.total_t = checkpoint['total_t']
+        agent_instance.train_t = checkpoint['train_t']
+
+        agent_instance.q_estimator = Estimator.from_checkpoint(checkpoint['q_estimator'])
+        agent_instance.target_estimator = deepcopy(agent_instance.q_estimator)
+        agent_instance.memory = Memory.from_checkpoint(checkpoint['memory'])
+
+        return agent_instance
 
     def train(self):
         if not self.look_ahead_train:
@@ -173,6 +210,7 @@ class LookAheadDqnAgent(DQNAgent):
         predictions = [e.item() for e in tensor[3][4:8]]
         scores = [e.item() for e in tensor[3][8:12]]
         trump = suits[np.argmax(tensor[3, 12:16])]
+        rest = [e for e in tensor[3][16:]]
 
         return {
             'played_cards': played,
@@ -181,7 +219,8 @@ class LookAheadDqnAgent(DQNAgent):
             'id': player_id,
             'predictions': predictions,
             'scores': scores,
-            'trump': trump
+            'trump': trump,
+            'rest': rest
         }
 
     def _state_to_tensor(self, state):
@@ -209,5 +248,8 @@ class LookAheadDqnAgent(DQNAgent):
 
         # Encoding trump
         obs[3, 12 + suits.index(state['trump'])] = 1
+
+        # Encoding rest
+        obs[3, 16:] = state['rest']
 
         return np.expand_dims(obs, axis=0)

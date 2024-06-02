@@ -7,14 +7,13 @@ from rlcard.agents import DQNAgent, RandomAgent
 from rlcard.utils import get_device, Logger, reorganize, tournament, plot_curve
 
 from diff.env import DiffEnv
-from diff.prediction import FixedPredictionStrategy
 
 TRAIN_CONFIG = {
     'players': 4,
     'rounds': 1,
     # 'prediction_strategy': FixedPredictionStrategy(157 // 4),
     'reward_strategy': 'default',
-    'state_representation': 'compressed',
+    'state_representation': 'enhanced_large',
     'first_player_strategy': 'random',
     'allow_step_back': False,
     'seed': random.randint(1, 999999)
@@ -25,7 +24,7 @@ TEST_CONFIG = {
     'rounds': 9,
     # 'prediction_strategy': FixedPredictionStrategy(157 // 4),
     'reward_strategy': 'winner_takes_all',
-    'state_representation': 'compressed',
+    'state_representation': 'enhanced_large',
     'first_player_strategy': 'random',
     'allow_step_back': False,
     'seed': random.randint(1, 999999)
@@ -36,7 +35,7 @@ TEST_CONFIG_2 = {
     'rounds': 9,
     # 'prediction_strategy': FixedPredictionStrategy(157 // 4),
     'reward_strategy': 'default',
-    'state_representation': 'compressed',
+    'state_representation': 'enhanced_large',
     'first_player_strategy': 'random',
     'allow_step_back': False,
     'seed': random.randint(1, 999999)
@@ -47,7 +46,7 @@ def train_agent(
         log_dir='log',
         save_every=1000,
         evaluate_every=1000,
-        num_episodes=50000,
+        num_episodes=1000,
         num_eval_games=100
 ):
     device = get_device()

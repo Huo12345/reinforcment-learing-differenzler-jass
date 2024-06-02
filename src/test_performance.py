@@ -1,32 +1,46 @@
 import random
 
-import torch
-
 from rlcard.agents import DQNAgent, RandomAgent
 from rlcard.utils import tournament
 
 from diff.env import DiffEnv
 from diff.prediction import FixedPredictionStrategy
+from agent.look_ahead_dqn_agent import LookaheadDqnAgent
 
-DEFAULT_GAME_CONFIG = {
+TEST_CONFIG_1 = {
     'players': 4,
     'rounds': 9,
-    'prediction_strategy': FixedPredictionStrategy(157 // 4),
+    # 'prediction_strategy': FixedPredictionStrategy(157 // 4),
     'reward_strategy': 'winner_takes_all',
     'state_representation': 'compressed',
     'allow_step_back': False,
     'seed': random.randint(1, 999999)
 }
 
+TEST_CONFIG_2 = {
+    'players': 4,
+    'rounds': 9,
+    # 'prediction_strategy': FixedPredictionStrategy(157 // 4),
+    'reward_strategy': 'default',
+    'state_representation': 'compressed',
+    'allow_step_back': False,
+    'seed': random.randint(1, 999999)
+}
 
-def evaluate_performance():
-    env = DiffEnv(DEFAULT_GAME_CONFIG)
 
-    agent = DQNAgent.from_checkpoint(checkpoint=torch.load("log/checkpoint_dqn.pt"))
+def evaluate_performance(rounds=100):
+    print("Testing lookahead agent for %d rounds: " % rounds)
+    env = DiffEnv(TEST_CONFIG_1)
+    env2 = DiffEnv(TEST_CONFIG_2)
+
+    agent = LookaheadDqnAgent(path="runs/compressed/log_rand/model.pth")
     agents = [agent] + [RandomAgent(num_actions=env.num_actions) for _ in range(1, env.num_players)]
     env.set_agents(agents)
-    result = tournament(env, 100)
-    print(result)
+    env2.set_agents(agents)
+    result = tournament(env, rounds)
+    print("Agent wins %f%% of the games" % (result[0] * 100))
+    result = tournament(env2, rounds)
+    print("Agent is off by %f pts on avg" % (result[0] * -157))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 # RL - Differenzler Jass
-This project tries to apply deep q learning to the differenzler jass. 
+This project tries to apply deep q learning to the differenzler jass using [RLCard](https://github.com/datamllab/rlcard). 
 
 ## Setup
 The following packages are required to run the project:

@@ -1,5 +1,5 @@
 # Reinforcement Learning Agents for the Game of Differenzler Jass
-This project tries to apply DeepQ learning to the differenzler jass using [RLCard](https://github.com/datamllab/rlcard). 
+This project tries to apply DeepQ learning to the Differenzler Jass using [RLCard](https://github.com/datamllab/rlcard). 
 
 ## Setup
 The following packages are required to run the project:
